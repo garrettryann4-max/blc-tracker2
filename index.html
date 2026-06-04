@@ -75,6 +75,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mbtn{flex:1;padding:13px;border-radius:11px;border:none;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;}
 .mbtn-cancel{background:#EEF1F5;color:#6B7A8D;}
 .mbtn-save{background:#4A8FA3;color:white;}
+.edit-btn{display:block;width:calc(100% - 28px);margin:0 14px 6px;background:none;border:0.5px solid #D1D9E0;border-radius:8px;color:#4A6380;font-family:inherit;font-size:12px;font-weight:600;padding:9px;cursor:pointer;}
+.edit-btn{display:block;width:calc(100% - 28px);margin:0 14px 6px;background:none;border:0.5px solid #D1D9E0;border-radius:8px;color:#4A6380;font-family:inherit;font-size:12px;font-weight:600;padding:9px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -145,6 +147,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<div class="modal-bg" id="editModal" onclick="closeEditBg(event)">
+  <div class="modal">
+    <h2>Edit Lead</h2>
+    <label>Business Name</label><input type="text" id="e-business" placeholder="Business name">
+    <label>Contact Name</label><input type="text" id="e-contact" placeholder="Contact name">
+    <label>Phone</label><input type="tel" id="e-phone" placeholder="Phone">
+    <label>Business Type</label><input type="text" id="e-type" placeholder="Type">
+    <label>Status</label>
+    <select id="e-status">
+      <option value="new">New</option>
+      <option value="pending">Pending</option>
+      <option value="transfer">Offline Transfer</option>
+      <option value="nosale">No Sale</option>
+    </select>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="closeEdit()">Cancel</button>
+      <button class="mbtn mbtn-save" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+<div class="modal-bg" id="editModal" onclick="closeEditBg(event)">
+  <div class="modal">
+    <h2>Edit Lead</h2>
+    <label>Business Name</label><input type="text" id="e-business" placeholder="Business name">
+    <label>Contact Name</label><input type="text" id="e-contact" placeholder="Contact name">
+    <label>Phone</label><input type="tel" id="e-phone" placeholder="Phone">
+    <label>Business Type</label><input type="text" id="e-type" placeholder="Type">
+    <label>Status</label>
+    <select id="e-status">
+      <option value="new">New</option>
+      <option value="pending">Pending</option>
+      <option value="transfer">Offline Transfer</option>
+      <option value="nosale">No Sale</option>
+    </select>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="closeEdit()">Cancel</button>
+      <button class="mbtn mbtn-save" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
 <script>
 const SHEET='https://script.google.com/macros/s/AKfycby8bB6MV36GMZT4vrYOe5Dqow8g1LBc9_w3QuCF-VZw42QjbBYg0bG_627NKsKrrhNg/exec';
 
@@ -298,6 +340,7 @@ function renderBody(l,i){
       <textarea class="notes-ta" onchange="updateField(${i},'notes',this.value)" placeholder="Notes, blockers, context...">${cl.notes||''}</textarea>
     </div>
     <button class="save-btn" onclick="pushLead(leads()[${i}])">⬆ Save to Google Sheet</button>
+    <button class="edit-btn" onclick="openEdit(${i})">✏️ Edit Lead</button>
     <button class="del-btn" onclick="deleteLead(${i})">Remove Lead</button>
   </div>`;
 }
@@ -364,6 +407,29 @@ function closeModal(){document.getElementById('modal').classList.remove('open');
 function closeModalBg(e){if(e.target===document.getElementById('modal'))closeModal();}
 function switchTab(id,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('on'));document.getElementById('tab-'+id).classList.add('on');el.classList.add('on');if(id==='summary')renderSummary();if(id==='tomorrow')renderTomorrow();}
 function switchProducer(p,btn){producer=p;expanded=null;document.querySelectorAll('.prod-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderLeads();}
+let editIdx=null;
+function openEdit(i){
+  editIdx=i;
+  const l=leads()[i];
+  document.getElementById('e-business').value=l.business;
+  document.getElementById('e-contact').value=l.contact||'';
+  document.getElementById('e-phone').value=l.phone||'';
+  document.getElementById('e-type').value=l.type||'';
+  document.getElementById('e-status').value=l.status||'new';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEdit(){document.getElementById('editModal').classList.remove('open');editIdx=null;}
+function closeEditBg(e){if(e.target===document.getElementById('editModal'))closeEdit();}
+function saveEdit(){
+  if(editIdx===null)return;
+  const l=leads()[editIdx];
+  l.business=document.getElementById('e-business').value.trim()||l.business;
+  l.contact=document.getElementById('e-contact').value.trim();
+  l.phone=document.getElementById('e-phone').value.trim();
+  l.type=document.getElementById('e-type').value.trim();
+  l.status=document.getElementById('e-status').value;
+  persist();closeEdit();renderLeads();pushLead(leads()[editIdx]);
+}
 loadData();
 document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 renderLeads();

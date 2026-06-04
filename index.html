@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BLC Lead Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F9FB;color:#2C3E50;min-height:100vh;padding-bottom:90px;}
+.topbar{background:#2C3E50;padding:52px 16px 14px;position:sticky;top:0;z-index:100;}
+.topbar-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.topbar h1{font-size:19px;font-weight:700;color:white;font-family:Georgia,serif;}
+.sub{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.datelbl{font-size:10px;color:rgba(255,255,255,0.5);}
+.sbadge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;display:none;}
+.s-ok{background:#D9EDE0;color:#4A7C59;}
+.s-wait{background:#F5EDD6;color:#9A7D4A;}
+.prod-toggle{display:flex;gap:4px;}
+.prod-btn{border:none;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;padding:6px 13px;cursor:pointer;border-radius:7px;font-family:inherit;}
+.prod-btn.on{background:#4A8FA3;color:white;}
+.btn-row{display:flex;gap:8px;margin:12px 14px 6px;}
+.btn-add{flex:2;display:flex;align-items:center;justify-content:center;gap:6px;background:#4A8FA3;color:white;border:none;border-radius:12px;padding:13px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-sync{flex:1;background:#4A7C59;color:white;border:none;border-radius:12px;padding:13px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+.card{background:white;border-radius:12px;margin:8px 14px;overflow:hidden;border:0.5px solid #D1D9E0;position:relative;}
+.card-accent{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px;}
+.card-hdr{display:flex;align-items:center;gap:8px;padding:11px 12px 10px 18px;cursor:pointer;}
+.card-name{font-size:14px;font-weight:700;color:#2C3E50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-meta{font-size:11px;color:#6B7A8D;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pill{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.ring{position:relative;width:32px;height:32px;flex-shrink:0;}
+.ring-txt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-weight:700;color:#2C3E50;}
+.chevron{color:#D1D9E0;font-size:12px;transition:transform 0.2s;flex-shrink:0;}
+.chevron.open{transform:rotate(180deg);}
+.card-body{border-top:0.5px solid #EEF1F5;display:none;}
+.card-body.open{display:block;}
+.sec-label{display:flex;align-items:center;gap:7px;padding:9px 14px 4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.sec-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.cb-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid #EEF1F5;cursor:pointer;background:white;}
+.cb-row:active{background:#EEF1F5;}
+.cb-box{width:20px;height:20px;border-radius:5px;border:1.5px solid #D1D9E0;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.cb-lbl{font-size:13px;color:#2C3E50;}
+.cb-lbl.done{text-decoration:line-through;color:#6B7A8D;}
+.si-wrap{padding:4px 14px 8px 44px;border-bottom:0.5px solid #EEF1F5;background:white;}
+.si{width:100%;background:#EEF1F5;border:none;border-radius:7px;padding:7px 10px;font-size:12px;color:#2C3E50;outline:none;font-family:inherit;}
+.si::placeholder{color:#D1D9E0;}
+.notes-wrap{padding:8px 14px 10px;}
+.notes-lbl{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9A7D4A;margin-bottom:5px;}
+.notes-ta{width:100%;background:#EEF1F5;border:none;border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12px;color:#2C3E50;resize:none;min-height:60px;outline:none;}
+.save-btn{display:block;width:calc(100% - 28px);margin:0 14px 8px;background:#4A7C59;border:none;border-radius:8px;color:white;font-family:inherit;font-size:12px;font-weight:700;padding:10px;cursor:pointer;}
+.del-btn{display:block;width:calc(100% - 28px);margin:0 14px 12px;background:none;border:0.5px solid #EDD6D6;border-radius:8px;color:#B07C6E;font-family:inherit;font-size:12px;font-weight:600;padding:9px;cursor:pointer;}
+.empty{text-align:center;padding:48px 28px;color:#6B7A8D;font-size:14px;line-height:1.6;}
+.sec-hdr{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#6B7A8D;padding:16px 14px 6px;}
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 14px 12px;}
+.sum-card{background:white;border-radius:10px;padding:12px 14px;border:0.5px solid #D1D9E0;}
+.sum-num{font-family:Georgia,serif;font-size:28px;color:#2C3E50;line-height:1;}
+.sum-lbl{font-size:10px;font-weight:600;color:#6B7A8D;margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.plan-card{background:white;border-radius:12px;margin:0 14px;border:0.5px solid #D1D9E0;overflow:hidden;}
+.plan-hdr{background:#B07C6E;padding:10px 14px;display:flex;align-items:center;gap:7px;color:white;font-size:12px;font-weight:700;text-transform:uppercase;}
+.plan-ta{width:100%;border:none;padding:12px 14px;font-family:inherit;font-size:13px;color:#2C3E50;resize:none;min-height:220px;outline:none;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:0.5px solid #EEF1F5;display:flex;padding:10px 0 28px;z-index:100;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:#6B7A8D;cursor:pointer;padding:4px 0;border:none;background:none;font-family:inherit;}
+.nav-item.on{color:#4A8FA3;}
+.nav-icon{font-size:20px;}
+.tab{display:none;}
+.tab.on{display:block;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;}
+.modal-bg.open{display:flex;}
+.modal{background:white;border-radius:22px 22px 0 0;padding:22px 18px 40px;width:100%;}
+.modal h2{font-family:Georgia,serif;font-size:19px;color:#2C3E50;margin-bottom:16px;}
+.modal label{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#6B7A8D;display:block;margin:12px 0 5px;}
+.modal input,.modal select{width:100%;border:1px solid #D1D9E0;border-radius:10px;padding:11px 13px;font-family:inherit;font-size:15px;color:#2C3E50;background:#F8F9FB;outline:none;-webkit-appearance:none;}
+.modal-btns{display:flex;gap:10px;margin-top:20px;}
+.mbtn{flex:1;padding:13px;border-radius:11px;border:none;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;}
+.mbtn-cancel{background:#EEF1F5;color:#6B7A8D;}
+.mbtn-save{background:#4A8FA3;color:white;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div>
+      <h1>BLC Lead Tracker</h1>
+      <div class="sub">
+        <span class="datelbl" id="dateLabel"></span>
+        <span class="sbadge" id="syncBadge"></span>
+      </div>
+    </div>
+    <div class="prod-toggle">
+      <button class="prod-btn on" onclick="switchProducer('Peter S',this)">Peter</button>
+      <button class="prod-btn" onclick="switchProducer('Erick G',this)">Erick</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab on" id="tab-leads">
+  <div class="btn-row">
+    <button class="btn-add" onclick="openModal()"><span style="font-size:18px;font-weight:300">+</span> Add Lead</button>
+    <button class="btn-sync" onclick="syncAll()">⬆ Sync All</button>
+  </div>
+  <div id="leadsList"></div>
+</div>
+
+<div class="tab" id="tab-summary">
+  <div class="sec-hdr" id="sumLabel"></div>
+  <div class="sum-grid" id="sumGrid"></div>
+  <div class="sec-hdr">Lead Breakdown</div>
+  <div id="sumBreakdown"></div>
+</div>
+
+<div class="tab" id="tab-tomorrow">
+  <div class="sec-hdr" id="tmrLabel"></div>
+  <div class="plan-card">
+    <div class="plan-hdr">📅 Plan for Tomorrow</div>
+    <textarea class="plan-ta" id="planTa" placeholder="Which leads to follow up, calls to make, quotes to chase..." oninput="savePlan(this.value)"></textarea>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item on" onclick="switchTab('leads',this)"><span class="nav-icon">📋</span>Leads</button>
+  <button class="nav-item" onclick="switchTab('summary',this)"><span class="nav-icon">📊</span>Summary</button>
+  <button class="nav-item" onclick="switchTab('tomorrow',this)"><span class="nav-icon">📅</span>Tomorrow</button>
+</div>
+
+<div class="modal-bg" id="modal" onclick="closeModalBg(event)">
+  <div class="modal">
+    <h2>Add New Lead</h2>
+    <label>Business Name *</label><input type="text" id="f-business" placeholder="e.g. West Slope Foundation">
+    <label>Contact Name</label><input type="text" id="f-contact" placeholder="e.g. Scot Telfer">
+    <label>Phone</label><input type="tel" id="f-phone" placeholder="e.g. 530-287-4710">
+    <label>Business Type</label><input type="text" id="f-type" placeholder="e.g. Non-Profit">
+    <label>Status</label>
+    <select id="f-status">
+      <option value="new">New</option>
+      <option value="pending">Pending</option>
+      <option value="transfer">Offline Transfer</option>
+      <option value="nosale">No Sale</option>
+    </select>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="mbtn mbtn-save" onclick="addLead()">Add Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET='https://script.google.com/macros/s/AKfycby8bB6MV36GMZT4vrYOe5Dqow8g1LBc9_w3QuCF-VZw42QjbBYg0bG_627NKsKrrhNg/exec';
+
+const TIVLY={
+'Peter S':[
+  {business:'West Slope Foundation',    contact:'Scot Telfer',       phone:'530-287-4710',type:'Non-Profit / Disaster Response',status:'pending', date:'06/03/26'},
+  {business:'City Ball Corp.',           contact:'Joseph Belfrey',    phone:'415-533-5150',type:'Non-Profit / Community Org',    status:'pending', date:'06/03/26'},
+  {business:'Southern Sierra Pops',      contact:'Rhonda Brooks',     phone:'562-879-6573',type:'Non-Profit / Musicians',        status:'pending', date:'06/02/26'},
+  {business:'Safe Hand Medical Courier', contact:'Hargot Bala',       phone:'909-240-7324',type:'Medical Courier',               status:'pending', date:'06/02/26'},
+  {business:'Sipful LLC',                contact:'Juan Turcios',      phone:'323-787-5186',type:'Ice Cream Manufacturing',       status:'pending', date:'06/02/26'},
+  {business:'Greenly Management LLC',    contact:'Michael Adieleuwa', phone:'713-998-3711',type:'Cargo Van / Freight',           status:'pending', date:'06/01/26'},
+  {business:'Air Expy Smoke Shop',       contact:'Daniel Gallegos',   phone:'626-485-1007',type:'Smoke Shop / Retail',           status:'nosale',  date:'06/01/26'},
+],
+'Erick G':[
+  {business:'Oltea, LLC (Leaf & Heir)',      contact:'Nancy Curry',       phone:'951-757-4781',type:'Tea / Food Manufacturing',      status:'transfer',date:'06/03/26'},
+  {business:'Iglesia De Jesucristo Palabra', contact:'Wendy Aragon',      phone:'323-330-3190',type:'Church',                        status:'transfer',date:'06/02/26'},
+  {business:'Kevin Owens (Self-Storage)',    contact:'Kevin Owens',       phone:'916-470-6338',type:'Self-Storage',                  status:'transfer',date:'06/01/26'},
+  {business:'Design By Aib LLC',             contact:'Andrew Billups',    phone:'214-668-7148',type:'Clothing Manufacturing',        status:'transfer',date:'06/01/26'},
+  {business:'Tamarind Composites',           contact:'Lillian Imley',     phone:'424-452-8876',type:'Aerospace Components',          status:'transfer',date:'06/02/26'},
+  {business:'Cavalier Orchestra Booster',    contact:'Huai-jin Zhou',     phone:'913-406-4048',type:'Non-Profit / School Orchestra', status:'transfer',date:'06/01/26'},
+  {business:'Auto Recon Transportation LLC', contact:'Cristian Fuentes',  phone:'281-606-1284',type:'Auto Reconditioning',           status:'transfer',date:'05/29/26'},
+  {business:'Shiny Fleets LLC',              contact:'Emilio Vargas',     phone:'415-691-1337',type:'Pressure Washing / Auto Detail',status:'transfer',date:'05/29/26'},
+  {business:'R.A.X. Auto LLC',               contact:'Roman Karnaukhov',  phone:'281-779-0445',type:'Auto Repair / Used Car Sales',  status:'pending', date:'05/28/26'},
+  {business:'T & R Legacy Protection Svc',   contact:'Christopher Kelly', phone:'346-268-7544',type:'Security Guard Company',        status:'pending', date:'05/22/26'},
+  {business:'Edward Rodriguez',              contact:'Edward Rodriguez',  phone:'213-379-3464',type:'Auto Repair',                   status:'transfer',date:'05/21/26'},
+]};
+
+const SM={new:{l:'New',bg:'#D9EDE0',c:'#4A7C59'},pending:{l:'Pending',bg:'#F5EDD6',c:'#9A7D4A'},transfer:{l:'Transferred',bg:'#D6E4F0',c:'#4A6380'},nosale:{l:'No Sale',bg:'#F2E4E0',c:'#B07C6E'}};
+const AC={new:'#4A8FA3',pending:'#9A7D4A',transfer:'#4A6380',nosale:'#B07C6E'};
+const BOOLS=['contacted','bizCard','appSubmitted','garrettCC','calledTAPCO','calledUSLI','quoteReceived','quoted','numberSaved','messageSent','pitched','closed'];
+
+function mkCL(){return{contacted:false,appSubmitted:false,garrettCC:false,calledTAPCO:false,tapcoWho:'',calledUSLI:false,usliWho:'',quoteReceived:false,followUpDate:'',numberSaved:false,bizCard:false,messageSent:false,messageDate:'',quoted:false,pitched:false,closed:false,notes:''};}
+
+let D,producer='Peter S',expanded=null;
+
+function loadData(){
+  try{D=JSON.parse(localStorage.getItem('blc10')||'null');}catch{D=null;}
+  if(!D){
+    D={};
+    ['Peter S','Erick G'].forEach(p=>{D[p]={leads:TIVLY[p].map(l=>({...l,checklist:mkCL()})),plan:''};});
+    persist();
+  }
+}
+function persist(){localStorage.setItem('blc10',JSON.stringify(D));}
+function leads(){return D[producer].leads;}
+function prog(cl){return Math.round(BOOLS.filter(k=>cl[k]).length/BOOLS.length*100);}
+
+function pushLead(lead,prod){
+  const cl=lead.checklist;
+  const data={
+    producer:prod||producer,
+    business:lead.business,contact:lead.contact,phone:lead.phone,
+    type:lead.type,status:lead.status,date:lead.date,
+    contacted:cl.contacted,bizCard:cl.bizCard,
+    appSubmitted:cl.appSubmitted,garrettCC:cl.garrettCC,
+    calledTAPCO:cl.calledTAPCO,tapcoWho:cl.tapcoWho||'',
+    calledUSLI:cl.calledUSLI,usliWho:cl.usliWho||'',
+    quoteReceived:cl.quoteReceived,followUpDate:cl.followUpDate||'',
+    numberSaved:cl.numberSaved,messageSent:cl.messageSent,
+    messageDate:cl.messageDate||'',quoted:cl.quoted,
+    pitched:cl.pitched,closed:cl.closed,notes:cl.notes||''
+  };
+  showSync('syncing');
+  const url=SHEET+'?payload='+encodeURIComponent(JSON.stringify(data));
+  const xhr=new XMLHttpRequest();
+  xhr.open('GET',url,true);
+  xhr.timeout=10000;
+  xhr.onload=xhr.onerror=xhr.ontimeout=function(){showSync('ok');setTimeout(hideSync,3000);};
+  xhr.send();
+}
+
+function syncAll(){
+  showSync('syncing');
+  leads().forEach((l,i)=>setTimeout(()=>{pushLead(l,producer);if(i===leads().length-1)setTimeout(()=>{showSync('ok');setTimeout(hideSync,3000);},1500);},i*600));
+}
+
+function showSync(s){
+  const b=document.getElementById('syncBadge');
+  b.style.display='inline-flex';
+  if(s==='syncing'){b.className='sbadge s-wait';b.textContent='⟳ Syncing...';}
+  else{b.className='sbadge s-ok';b.textContent='✓ Saved to Sheet';}
+}
+function hideSync(){document.getElementById('syncBadge').style.display='none';}
+
+function renderLeads(){
+  const list=document.getElementById('leadsList');
+  const arr=leads();
+  if(!arr.length){list.innerHTML='<div class="empty">Tap <strong>+ Add Lead</strong> to get started.</div>';return;}
+  list.innerHTML=arr.map((l,i)=>{
+    const pct=prog(l.checklist),sm=SM[l.status]||SM.new,ac=AC[l.status]||'#4A8FA3';
+    const circ=2*Math.PI*13,off=(circ-pct/100*circ).toFixed(1),open=expanded===i,rs=pct===100?'#4A7C59':'#4A8FA3';
+    return `<div class="card">
+      <div class="card-accent" style="background:${ac}"></div>
+      <div class="card-hdr" onclick="toggleCard(${i})">
+        <div style="flex:1;min-width:0">
+          <div class="card-name">${l.business}</div>
+          <div class="card-meta">${[l.contact,l.phone].filter(Boolean).join(' · ')}</div>
+        </div>
+        <span class="pill" style="background:${sm.bg};color:${sm.c}">${sm.l}</span>
+        <div class="ring">
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="13" fill="none" stroke="#EEF1F5" stroke-width="2.5"/>
+            <circle cx="16" cy="16" r="13" fill="none" stroke="${rs}" stroke-width="2.5" stroke-linecap="round"
+              stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off}" style="transform:rotate(-90deg);transform-origin:50% 50%"/>
+          </svg>
+          <div class="ring-txt">${pct}%</div>
+        </div>
+        <span class="chevron ${open?'open':''}">▼</span>
+      </div>
+      ${open?renderBody(l,i):''}
+    </div>`;
+  }).join('');
+}
+
+function renderBody(l,i){
+  const cl=l.checklist;
+  function cb(field,label,color){
+    const on=cl[field];
+    return `<div class="cb-row" onclick="toggleCheck(${i},'${field}')">
+      <div class="cb-box" style="${on?`background:${color};border-color:${color}`:''}">
+        ${on?'<span style="color:white;font-size:11px;font-weight:bold">✓</span>':''}
+      </div>
+      <span class="cb-lbl ${on?'done':''}">${label}</span>
+    </div>`;
+  }
+  function si(field,ph){return `<div class="si-wrap"><input class="si" type="text" placeholder="${ph}" value="${(cl[field]||'').replace(/"/g,'&quot;')}" onchange="updateField(${i},'${field}',this.value)"></div>`;}
+  function sec(color,label){return `<div class="sec-label" style="color:${color}"><div class="sec-dot" style="background:${color}"></div>${label}</div>`;}
+  return `<div class="card-body open">
+    ${sec('#4A6380','EMAIL / SUBMISSION')}
+    ${cb('contacted','Client contacted','#4A6380')}
+    ${cb('bizCard','Business card sent','#4A6380')}
+    ${cb('appSubmitted','Application submitted','#4A6380')}
+    ${cb('garrettCC',"Garrett CC'd on email",'#4A6380')}
+    ${sec('#6B8F71','QUOTE ACTIVITY')}
+    ${cb('calledTAPCO','Called TAPCO','#6B8F71')}
+    ${si('tapcoWho','Spoke with at TAPCO...')}
+    ${cb('calledUSLI','Called USLI','#6B8F71')}
+    ${si('usliWho','Spoke with at USLI...')}
+    ${cb('quoteReceived','Quote received','#6B8F71')}
+    ${cb('quoted','✅ Quoted','#6B8F71')}
+    ${si('followUpDate','Follow-up date if no quote...')}
+    ${sec('#8B6F8E','DAILY OUTREACH')}
+    ${cb('numberSaved','Number saved in phone','#8B6F8E')}
+    ${cb('messageSent','Message sent today','#8B6F8E')}
+    ${si('messageDate','Date of message...')}
+    ${sec('#9A7D4A','STAGE')}
+    ${cb('pitched','🎯 Pitched to client','#9A7D4A')}
+    ${cb('closed','🏆 Closed / Won','#4A7C59')}
+    <div class="notes-wrap">
+      <div class="notes-lbl">Notes</div>
+      <textarea class="notes-ta" onchange="updateField(${i},'notes',this.value)" placeholder="Notes, blockers, context...">${cl.notes||''}</textarea>
+    </div>
+    <button class="save-btn" onclick="pushLead(leads()[${i}])">⬆ Save to Google Sheet</button>
+    <button class="del-btn" onclick="deleteLead(${i})">Remove Lead</button>
+  </div>`;
+}
+
+function renderSummary(){
+  const arr=leads();
+  document.getElementById('sumLabel').textContent=producer+' — Today\'s Summary';
+  const stats=[
+    {n:arr.length,l:'Total Leads',c:'#4A6380'},
+    {n:arr.filter(l=>l.checklist.contacted).length,l:'Contacted',c:'#4A8FA3'},
+    {n:arr.filter(l=>l.checklist.quoted).length,l:'Quoted',c:'#9A7D4A'},
+    {n:arr.filter(l=>l.checklist.pitched).length,l:'Pitched',c:'#8B6F8E'},
+    {n:arr.filter(l=>l.checklist.closed).length,l:'Closed',c:'#4A7C59'},
+    {n:arr.filter(l=>l.checklist.messageSent).length,l:'Msgs Sent',c:'#6B8F71'},
+  ];
+  document.getElementById('sumGrid').innerHTML=stats.map(s=>`
+    <div class="sum-card">
+      <div style="width:20px;height:3px;border-radius:2px;background:${s.c};margin-bottom:6px"></div>
+      <div class="sum-num">${s.n}</div>
+      <div class="sum-lbl">${s.l}</div>
+    </div>`).join('');
+  document.getElementById('sumBreakdown').innerHTML=arr.map(l=>{
+    const pct=prog(l.checklist);
+    const bc=pct===100?'#4A7C59':pct>60?'#4A8FA3':pct>30?'#9A7D4A':'#B07C6E';
+    const badges=[
+      l.checklist.contacted&&['Contacted','#D6E4F0','#4A6380'],
+      l.checklist.garrettCC&&["CC'd",'#D9EDE0','#4A7C59'],
+      l.checklist.calledTAPCO&&['TAPCO','#D9EDE0','#4A7C59'],
+      l.checklist.calledUSLI&&['USLI','#D9EDE0','#4A7C59'],
+      l.checklist.quoted&&['Quoted','#F5EDD6','#9A7D4A'],
+      l.checklist.pitched&&['Pitched','#EDE0F0','#8B6F8E'],
+      l.checklist.closed&&['🏆 Closed','#D9EDE0','#4A7C59'],
+    ].filter(Boolean);
+    return `<div style="background:white;border-radius:10px;padding:10px 12px;margin:0 14px 6px;border:0.5px solid #D1D9E0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:12px;font-weight:700;color:#2C3E50">${l.business}</span>
+        <span style="font-size:11px;font-weight:600;color:${bc}">${pct}%</span>
+      </div>
+      <div style="background:#EEF1F5;border-radius:3px;height:4px;overflow:hidden">
+        <div style="background:${bc};height:100%;width:${pct}%;border-radius:3px"></div>
+      </div>
+      ${badges.length?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:6px">${badges.map(([t,bg,c])=>`<span class="pill" style="background:${bg};color:${c}">${t}</span>`).join('')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderTomorrow(){
+  document.getElementById('tmrLabel').textContent=producer+' — Plan for Tomorrow';
+  document.getElementById('planTa').value=D[producer].plan||'';
+}
+function savePlan(v){D[producer].plan=v;persist();}
+function toggleCard(i){expanded=expanded===i?null:i;renderLeads();}
+function toggleCheck(i,field){leads()[i].checklist[field]=!leads()[i].checklist[field];persist();renderLeads();setTimeout(()=>pushLead(leads()[i]),300);}
+function updateField(i,field,val){leads()[i].checklist[field]=val;persist();pushLead(leads()[i]);}
+function deleteLead(i){if(!confirm('Remove this lead?'))return;D[producer].leads=leads().filter((_,x)=>x!==i);persist();expanded=null;renderLeads();}
+function addLead(){
+  const biz=document.getElementById('f-business').value.trim();
+  if(!biz)return;
+  const lead={business:biz,contact:document.getElementById('f-contact').value.trim(),phone:document.getElementById('f-phone').value.trim(),type:document.getElementById('f-type').value.trim(),status:document.getElementById('f-status').value,date:new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit'}),checklist:mkCL()};
+  D[producer].leads.unshift(lead);persist();pushLead(lead);closeModal();expanded=0;renderLeads();
+}
+function openModal(){document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');['f-business','f-contact','f-phone','f-type'].forEach(id=>document.getElementById(id).value='');document.getElementById('f-status').value='new';}
+function closeModalBg(e){if(e.target===document.getElementById('modal'))closeModal();}
+function switchTab(id,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('on'));document.getElementById('tab-'+id).classList.add('on');el.classList.add('on');if(id==='summary')renderSummary();if(id==='tomorrow')renderTomorrow();}
+function switchProducer(p,btn){producer=p;expanded=null;document.querySelectorAll('.prod-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderLeads();}
+loadData();
+document.getElementById('dateLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+renderLeads();
+</script>
+</body>
+</html>
